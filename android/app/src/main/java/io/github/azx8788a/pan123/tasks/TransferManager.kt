@@ -52,6 +52,7 @@ class TransferManager(context: Context, private val graph: AppGraph) {
                 cloudJson = Json.encodeToString(file), parentId = file.parentId,
                 total = if (file.isDirectory) -1 else file.size, workId = work.id.toString()))
             workManager.enqueueUniqueWork("transfer:$id", ExistingWorkPolicy.KEEP, work)
+            id
         }
 
     suspend fun pause(id: String) {

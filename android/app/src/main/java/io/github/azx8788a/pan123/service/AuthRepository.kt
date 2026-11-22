@@ -18,18 +18,10 @@ class AuthRepository(private val api: PanApi, private val store: AccountStore) {
     }
 
     suspend fun acceptQrToken(token: String) = withContext(Dispatchers.IO) {
-        val previous = session.value
-        store.save(AccountSession("扫码登录", token, store.loginUuid, Build.VERSION.RELEASE))
-        try {
-            val info = api.profile()
-            if (info.uid <= 0) throw ApiException(-1, "扫码登录后未能获取账号 ID")
-            store.save(AccountSession("uid:${info.uid}", token, store.loginUuid, Build.VERSION.RELEASE))
-            store.remove("扫码登录")
-        } catch (error: Exception) {
-            store.logout()
-            if (previous != null) store.save(previous)
-            throw error
-        }
+        val provisional = AccountSession("扫码登录", token, store.loginUuid, Build.VERSION.RELEASE)
+        val info = PanApi({ provisional }, { store.loginUuid }).profile()
+        if (info.uid <= 0) throw ApiException(-1, "扫码登录后未能获取账号 ID")
+        store.save(provisional.copy(username = "uid:${info.uid}"))
     }
 
     suspend fun profile() = api.profile()

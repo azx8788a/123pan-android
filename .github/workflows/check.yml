@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - "**"
+      - "!android"
+      - "!feature/android-*"
   workflow_dispatch:
   pull_request:
 

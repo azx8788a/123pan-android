@@ -10,6 +10,7 @@ permissions:
 jobs:
   mirror:
     name: Mirror to Codeberg
+    if: github.repository == '123panNextGen/123pan'
     runs-on: ubuntu-latest
 
     steps:

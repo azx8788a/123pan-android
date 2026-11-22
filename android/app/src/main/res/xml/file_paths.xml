@@ -1,0 +1,5 @@
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <external-path name="shared" path="." />
+    <root-path name="volumes" path="storage/" />
+    <files-path name="private" path="." />
+</paths>

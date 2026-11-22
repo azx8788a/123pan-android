@@ -21,7 +21,7 @@
         android:requestLegacyExternalStorage="true"
         android:supportsRtl="true"
         android:theme="@style/Theme.Pan123"
-        android:usesCleartextTraffic="false"
+        android:usesCleartextTraffic="true"
         tools:targetApi="q">
 
         <activity android:name=".MainActivity" android:exported="true">
@@ -36,5 +36,13 @@
             android:foregroundServiceType="dataSync"
             android:exported="false"
             tools:node="merge" />
+        <receiver android:name=".tasks.TransferActionReceiver" android:exported="false" />
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
+        </provider>
     </application>
 </manifest>

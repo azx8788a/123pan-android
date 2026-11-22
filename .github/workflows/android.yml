@@ -45,17 +45,30 @@ jobs:
           key: pan123-android-debug-signing-v1
       - name: Install Android platform
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
-      - name: Test, lint and build APK
-        run: ./gradlew --no-daemon testDebugUnitTest lintDebug assembleDebug
-      - name: Package APK and corresponding source
+      - name: Decode release signing keystore
+        if: env.ANDROID_KEYSTORE_BASE64 != ''
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+      - name: Test, lint and build APKs
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon testDebugUnitTest lintDebug assembleDebug assembleRelease
+      - name: Package APKs and corresponding source
         run: |
           mkdir -p build/artifacts
           cp app/build/outputs/apk/debug/app-debug.apk build/artifacts/123pan-next-debug.apk
-          sha256sum build/artifacts/123pan-next-debug.apk > build/artifacts/123pan-next-debug.apk.sha256
+          cp app/build/outputs/apk/release/app-release.apk build/artifacts/123pan-next-release.apk
+          sha256sum build/artifacts/123pan-next-debug.apk build/artifacts/123pan-next-release.apk > build/artifacts/SHA256SUMS
           git archive --format=zip HEAD -o build/artifacts/123pan-next-source.zip
+      - name: Verify release APK signature
+        run: $ANDROID_HOME/build-tools/35.0.0/apksigner verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: 123pan-next-debug-${{ github.run_number }}
+          name: 123pan-next-apk-${{ github.run_number }}
           path: android/build/artifacts/*
           if-no-files-found: error
           retention-days: 30

@@ -3,6 +3,11 @@
 local.properties
 *.jks
 *.keystore
+*.p12
+*.key
+*.crt
+keystore.properties
+PASSWORD.txt
 *.apk
 *.aab
 .idea/

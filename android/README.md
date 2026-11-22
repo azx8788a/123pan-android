@@ -45,11 +45,21 @@ CI 会执行：
 
 ```sh
 cd android
-./gradlew --no-daemon testDebugUnitTest lintDebug assembleDebug
+./gradlew --no-daemon testDebugUnitTest lintDebug assembleDebug assembleRelease
 ```
 
-成功后下载 `123pan-next-debug-运行序号` artifact，内含 APK、SHA-256 和同一提交的源码 ZIP。
-APK 为开发测试版，CI 通过缓存复用调试签名以支持后续覆盖更新。清空签名缓存后，遇到无法覆盖安装时需卸载旧测试版。
+成功后下载 `123pan-next-apk-运行序号` artifact，内含调试版、使用项目签名证书的正式版、SHA-256 清单和同一提交的源码 ZIP。签名文件与密码保存在 GitHub Actions Secrets 中，不会进入仓库。
+
+本地构建 release 签名包时，将 `release.keystore` 和 `keystore.properties` 放在 `android/` 目录（两者均已被 `.gitignore` 忽略），格式如下：
+
+```properties
+storeFile=release.keystore
+storePassword=你的密钥库密码
+keyAlias=pan123
+keyPassword=你的密钥密码
+```
+
+也可以通过 `ANDROID_KEYSTORE_PATH`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD` 环境变量提供。未配置签名时，release 构建会回退到调试签名，便于本地验证。
 
 本地构建需要 JDK 17 和 Android SDK 35；将 `android/` 作为 Android Studio 工程打开即可。工作流不需要个人 GitHub 令牌或 123 云盘账号密码。
 

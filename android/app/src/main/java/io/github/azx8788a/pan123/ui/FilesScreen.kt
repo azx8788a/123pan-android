@@ -759,7 +759,7 @@ private fun FileRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .combinedClickable(onClick = open, onLongClick = toggle),
+            .combinedClickable(onClick = open, onLongClick = if (trash) open else toggle),
         shape = RoundedCornerShape(20.dp),
         color = if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f) else MaterialTheme.colorScheme.surface,
         border = BorderStroke(

@@ -26,6 +26,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoMode
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DarkMode
@@ -705,7 +706,7 @@ fun SettingsScreen(model: MainViewModel, requestFiles: () -> Unit) {
                                                 text = { Text(account, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                                                 trailingIcon = {
                                                     if (account == session?.accountKey) {
-                                                        Icon(Icons.Default.Security, null, tint = MaterialTheme.colorScheme.primary)
+                                                        Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.primary)
                                                     }
                                                 },
                                                 onClick = {

@@ -1,0 +1,43 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "30f6202094c645c21e28347aa71fc5be",
+    "entities": [
+      {
+        "tableName": "transfers",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `accountKey` TEXT NOT NULL, `kind` TEXT NOT NULL, `name` TEXT NOT NULL, `localPath` TEXT NOT NULL, `cloudJson` TEXT NOT NULL, `parentId` INTEGER NOT NULL, `status` TEXT NOT NULL, `done` INTEGER NOT NULL, `total` INTEGER NOT NULL, `message` TEXT NOT NULL, `uploadJson` TEXT NOT NULL, `workId` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          { "fieldPath": "id", "columnName": "id", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "accountKey", "columnName": "accountKey", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "kind", "columnName": "kind", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "name", "columnName": "name", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "localPath", "columnName": "localPath", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "cloudJson", "columnName": "cloudJson", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "parentId", "columnName": "parentId", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "status", "columnName": "status", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "done", "columnName": "done", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "total", "columnName": "total", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "message", "columnName": "message", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "uploadJson", "columnName": "uploadJson", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "workId", "columnName": "workId", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "createdAt", "columnName": "createdAt", "affinity": "INTEGER", "notNull": true }
+        ],
+        "primaryKey": { "autoGenerate": false, "columnNames": ["id"] },
+        "indices": [
+          {
+            "name": "index_transfers_accountKey",
+            "unique": false,
+            "columnNames": ["accountKey"],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_transfers_accountKey` ON `${TABLE_NAME}` (`accountKey`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '30f6202094c645c21e28347aa71fc5be')"
+    ]
+  }
+}

@@ -49,7 +49,7 @@ cd android
 ```
 
 成功后下载 `123pan-next-debug-运行序号` artifact，内含 APK、SHA-256 和同一提交的源码 ZIP。
-APK 为开发测试版，不是正式签名发行版。不同 CI 构建可能使用不同调试签名，遇到无法覆盖安装时需卸载旧测试版。
+APK 为开发测试版，CI 通过缓存复用调试签名以支持后续覆盖更新。清空签名缓存后，遇到无法覆盖安装时需卸载旧测试版。
 
 本地构建需要 JDK 17 和 Android SDK 35；将 `android/` 作为 Android Studio 工程打开即可。工作流不需要个人 GitHub 令牌或 123 云盘账号密码。
 

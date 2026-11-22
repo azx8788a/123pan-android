@@ -79,6 +79,8 @@ dependencies {
 
 val copyLicense by tasks.registering(Copy::class) {
     from(rootProject.file("../LICENSE"))
+    from(rootProject.file("LICENSE-APACHE-2.0"))
+    from(rootProject.file("THIRD_PARTY_NOTICES.md"))
     into(layout.buildDirectory.dir("generated/licenses"))
 }
 android.sourceSets["main"].assets.srcDir(layout.buildDirectory.dir("generated/licenses"))

@@ -1,3 +1,8 @@
+> **安卓移植分支**：本 fork 的原生 Android 工程位于 [`android/`](./android/README.md)。
+> 使用 Kotlin + Compose，采用所有文件访问和应用内文件选择器。
+> APK 由 [Android APK 工作流](https://github.com/azx8788a/123pan-android/actions/workflows/android.yml) 构建。
+> 下方保留上游桌面版说明；安卓版本的功能范围及尚未迁移内容请以 `android/README.md` 为准。
+
 <div align="center">
 
 # 123pan

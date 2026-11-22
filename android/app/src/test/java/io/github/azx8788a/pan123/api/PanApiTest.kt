@@ -75,4 +75,13 @@ class PanApiTest {
     @Test fun sessionDebugTextDoesNotIncludeToken() {
         assertFalse(session.toString().contains("test-token"))
     }
+
+    @Test fun loginFallsBackWhenPrimaryHostCannotConnect() = runBlocking {
+        val dead = MockWebServer().apply { start() }
+        val primaryUrl = dead.url("/")
+        dead.shutdown()
+        val client = PanApi({ null }, { "test-device" }, primaryUrl, server.url("/"))
+        server.enqueue(MockResponse().setBody("""{"code":200,"data":{"token":"fallback-token"}}"""))
+        assertEquals("fallback-token", client.login("user", "password"))
+    }
 }

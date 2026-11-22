@@ -73,6 +73,7 @@ class TransferManager(context: Context, private val graph: AppGraph) {
         workManager.cancelUniqueWork("transfer:$id")
         graph.taskLocks.getOrPut(id) { Mutex() }.withLock {
             val task = dao.get(id) ?: return@withLock
+            if (task.status != TransferStatus.CANCELLED) return@withLock
             if (task.kind == "download") {
                 staging(task).delete()
                 val destination = File(task.localPath)

@@ -59,6 +59,7 @@ import kotlinx.coroutines.withContext
             if (busy) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp) else Text("登录")
         }
         TextButton(onClick = { model.startQr() }, enabled = !busy) { Text("使用 123 云盘 App 扫码登录") }
+        if (model.session.value != null) TextButton(onClick = { model.needsLogin.value = false }) { Text("返回当前账号") }
         if (accounts.isNotEmpty()) {
             Text("已保存的账号", style = MaterialTheme.typography.labelLarge)
             accounts.forEach { key -> TextButton(onClick = { model.switchAccount(key) }, enabled = !busy) { Text(key) } }

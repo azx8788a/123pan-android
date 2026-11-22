@@ -1,6 +1,7 @@
 package io.github.azx8788a.pan123.service
 
 import java.io.File
+import io.github.azx8788a.pan123.api.CloudFile
 import io.github.azx8788a.pan123.api.PanApi
 import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
@@ -72,6 +73,16 @@ class TransferTest {
     @Test fun hashesWithoutLoadingWholeFile() = runBlocking {
         val file = temp.newFile().apply { writeText("abc") }
         assertEquals("900150983cd24fb0d6963f7d28e17f72", fileMd5(file))
+    }
+
+    @Test fun md5MismatchDoesNotPublishTheWrongFile() = runBlocking {
+        val staging = temp.newFile().apply { writeText("xyz") }
+        val destination = temp.newFile()
+        val file = CloudFile(1, "test.txt", 0, 3, "900150983cd24fb0d6963f7d28e17f72")
+        try { engine.run(file, destination, staging) {}; fail("Expected MD5 mismatch") }
+        catch (_: java.io.IOException) { }
+        assertEquals(0L, staging.length())
+        assertEquals(0L, destination.length())
     }
 
     @Test fun concurrentNameReservationsDoNotOverwrite() {

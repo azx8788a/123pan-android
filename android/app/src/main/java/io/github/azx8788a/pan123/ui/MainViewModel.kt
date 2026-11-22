@@ -111,9 +111,12 @@ class MainViewModel(private val graph: AppGraph) : ViewModel() {
 
     fun login(username: String, password: String) = action("正在登录") {
         stopQr()
+        val previousAccount = session.value?.accountKey
         graph.auth.login(username, password)
+        if (previousAccount != null && previousAccount != session.value?.accountKey) graph.transfers.pauseAccount(previousAccount)
         needsLogin.value = false
     }
+    fun addAccount() { needsLogin.value = true }
 
     fun switchAccount(key: String) = action("切换账号") {
         session.value?.accountKey?.let { graph.transfers.pauseAccount(it) }

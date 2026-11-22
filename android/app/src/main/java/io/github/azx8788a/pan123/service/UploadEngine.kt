@@ -70,6 +70,7 @@ class UploadEngine(private val api: PanApi, private val transfer: TransferHttp) 
             val completed = AtomicLong(uploaded.sumOf { partLength(size, it) })
             val inFlight = ConcurrentHashMap<Int, Long>()
             val next = AtomicInteger(0)
+            val progressLock = Any()
             fun report() = onProgress(TransferProgress("上传中", completed.get() + inFlight.values.sum(), size))
             report()
             coroutineScope {
@@ -84,14 +85,16 @@ class UploadEngine(private val api: PanApi, private val transfer: TransferHttp) 
                             val job = currentCoroutineContext().job
                             val body = FilePartBody(file, (number - 1) * PART_SIZE, length,
                                 checkActive = { if (!job.isActive) throw IOException("传输已停止") },
-                                onBytes = { inFlight[number] = it; report() })
+                                onBytes = { synchronized(progressLock) { inFlight[number] = it; report() } })
                             val request = Request.Builder().url(api.partUrl(activeSession, number)).put(body).build()
                             transfer.client.withResponse(request) { response ->
                                 if (!response.isSuccessful) throw TransferHttpException(response.code)
                             }
-                            inFlight.remove(number)
-                            completed.addAndGet(length)
-                            report()
+                            synchronized(progressLock) {
+                                inFlight.remove(number)
+                                completed.addAndGet(length)
+                                report()
+                            }
                         }
                     }
                 }

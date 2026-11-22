@@ -72,6 +72,7 @@ import kotlinx.coroutines.withContext
                     TextButton(onClick = { model.cancel(task.id) }) { Text("取消") }
                 }
                 if (task.status in listOf(TransferStatus.PAUSED, TransferStatus.FAILED, TransferStatus.CANCELLED)) {
+                    if (task.message.contains("登录已过期")) TextButton(onClick = model::addAccount) { Text("重新登录") }
                     TextButton(onClick = { model.resume(task.id) }) { Text(if (task.status == TransferStatus.FAILED) "重试" else "继续") }
                 }
             }
@@ -133,6 +134,7 @@ import kotlinx.coroutines.withContext
                 Text(profile?.nickname?.takeIf { it.isNotBlank() } ?: session?.username.orEmpty(), style = MaterialTheme.typography.titleLarge)
                 profile?.let { Text("已用 ${formatBytes(it.used)} / ${formatBytes(it.total)}", Modifier.padding(top = 8.dp)) }
                 if (accounts.size > 1) accounts.forEach { account -> TextButton(onClick = { model.switchAccount(account) }, enabled = account != session?.accountKey) { Text("切换到 $account") } }
+                TextButton(onClick = model::addAccount) { Text("添加其他账号") }
                 TextButton(onClick = { logout = true }) { Text("退出当前账号") }
             } } }
             item { Card { Column(Modifier.fillMaxWidth().padding(16.dp)) {

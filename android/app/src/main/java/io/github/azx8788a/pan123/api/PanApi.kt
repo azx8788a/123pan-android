@@ -6,6 +6,9 @@
 package io.github.azx8788a.pan123.api
 
 import java.io.IOException
+import java.net.ConnectException
+import java.net.UnknownHostException
+import javax.net.ssl.SSLHandshakeException
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -262,8 +265,9 @@ class PanApi(
         try {
             perform(targetBase ?: if (useFallback && fallbackUrl != null) fallbackUrl else baseUrl)
         } catch (error: IOException) {
-            // Never automatically replay a state-changing POST after an ambiguous network failure.
-            if (method != "GET" || targetBase != null || useFallback || fallbackUrl == null) throw error
+            val canFailOver = method == "GET" || path == "/b/api/user/sign_in" ||
+                error is ConnectException || error is UnknownHostException || error is SSLHandshakeException
+            if (!canFailOver || targetBase != null || useFallback || fallbackUrl == null) throw error
             val result = perform(fallbackUrl)
             useFallback = true
             result

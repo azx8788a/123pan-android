@@ -82,8 +82,6 @@ data class UploadSession(
     override fun toString(): String = "UploadSession(metadata=REDACTED)"
 }
 
-data class DownloadLink(val url: String, val direct: Boolean)
-
 data class ShareLink(val id: Long, val name: String, val url: String, val password: String) {
     companion object {
         fun fromJson(json: JsonObject) = ShareLink(

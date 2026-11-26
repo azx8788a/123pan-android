@@ -5,9 +5,17 @@ import java.io.File
 import java.io.IOException
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
+import io.github.azx8788a.pan123.api.obj
+import io.github.azx8788a.pan123.api.text
 import io.github.azx8788a.pan123.api.withResponse
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.intOrNull
+import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -20,6 +28,37 @@ class TransferHttpException(val status: Int) : IOException("传输请求失败�
     val retryable: Boolean get() = status == 408 || status == 429 || status >= 500
 }
 
+class DownloadProtocolException(message: String) : IOException(message)
+
+private val redirectCodes = setOf(301, 302, 303, 307, 308)
+private const val maxRedirectBodyBytes = 16_384L
+
+/** Only inspect small JSON control responses, leaving attachments and file data untouched. */
+private fun Response.jsonDownloadRedirect(expectedSize: Long): String? {
+    val body = body ?: return null
+    val subtype = body.contentType()?.subtype ?: return null
+    val length = body.contentLength()
+    if (code != 200 || (subtype != "json" && !subtype.endsWith("+json")) || length > maxRedirectBodyBytes ||
+        (expectedSize >= 0 && length == expectedSize) ||
+        header("Content-Disposition").orEmpty().substringBefore(';').trim().equals("attachment", ignoreCase = true)) {
+        return null
+    }
+    val bytes = peekBody(maxRedirectBodyBytes + 1).bytes()
+    if (bytes.size > maxRedirectBodyBytes || bytes.size.toLong() == expectedSize) return null
+    val root = try {
+        Json.parseToJsonElement(bytes.toString(Charsets.UTF_8)) as? JsonObject
+    } catch (_: SerializationException) {
+        null
+    } ?: return null
+    val redirect = root.obj("data", "Data").text("RedirectUrl", "redirect_url", "redirectUrl")
+    if (redirect.isBlank()) return null
+    val status = ((root["code"] ?: root["Code"]) as? JsonPrimitive)?.intOrNull ?: return null
+    if (status != 0) throw DownloadProtocolException("下载跳转接口返回错误（code $status）")
+    return redirect
+}
+
+private fun HttpUrl.hasUserInfo() = username.isNotEmpty() || password.isNotEmpty()
+
 /** CDN/S3 requests deliberately use their own client; API headers are not attached. */
 class TransferHttp(val client: OkHttpClient = OkHttpClient.Builder()
     .connectTimeout(20, TimeUnit.SECONDS)
@@ -29,8 +68,10 @@ class TransferHttp(val client: OkHttpClient = OkHttpClient.Builder()
     .retryOnConnectionFailure(false)
     .build()) {
 
-    suspend fun <T> download(url: String, offset: Long = 0, block: suspend (Response) -> T): T {
-        var current = url.toHttpUrlOrNull() ?: throw IOException("下载链接格式无效")
+    suspend fun <T> download(url: String, offset: Long, expectedSize: Long, block: suspend (Response) -> T): T {
+        // Request the provider-issued URL without changing its signed query or sending it to a proxy.
+        var current = url.toHttpUrlOrNull()?.takeUnless { it.hasUserInfo() }
+            ?: throw DownloadProtocolException("下载链接格式无效")
         repeat(10) {
             currentCoroutineContext().ensureActive()
             val request = Request.Builder().url(current).header("Accept-Encoding", "identity")
@@ -38,9 +79,17 @@ class TransferHttp(val client: OkHttpClient = OkHttpClient.Builder()
             var redirected = false
             var value: T? = null
             client.withResponse(request) { response ->
-                if (response.code in listOf(301, 302, 303, 307, 308)) {
-                    current = current.resolve(response.header("Location").orEmpty())
-                        ?: throw IOException("下载重定向缺少有效地址")
+                val target = if (response.code in redirectCodes) {
+                    response.header("Location")?.takeIf { it.isNotBlank() }
+                        ?: throw DownloadProtocolException("下载重定向缺少有效地址")
+                } else {
+                    response.jsonDownloadRedirect(expectedSize)
+                }
+                if (target != null) {
+                    val next = request.url.resolve(target)?.takeUnless { it.hasUserInfo() }
+                        ?: throw DownloadProtocolException("下载重定向地址无效")
+                    if (request.url.isHttps && !next.isHttps) throw DownloadProtocolException("已拒绝不安全的下载跳转")
+                    current = next
                     redirected = true
                 } else {
                     value = block(response)
@@ -51,7 +100,7 @@ class TransferHttp(val client: OkHttpClient = OkHttpClient.Builder()
                 return value as T
             }
         }
-        throw IOException("下载重定向次数过多")
+        throw DownloadProtocolException("下载重定向次数过多")
     }
 }
 

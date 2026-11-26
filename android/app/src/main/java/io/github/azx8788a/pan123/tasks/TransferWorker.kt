@@ -95,19 +95,15 @@ class TransferWorker(context: Context, parameters: WorkerParameters) : Coroutine
                 throw error
             } catch (error: Exception) {
                 val retry = when (error) {
-                    is FileNotFoundException -> false
+                    is FileNotFoundException, is DownloadProtocolException -> false
                     is TransferHttpException -> error.retryable || error.status == 403
                     is IOException -> graph.storage.granted()
-                    is ApiException -> error.code == 429 || error.code >= 500
+                    is ApiException -> error.code == 429 || error.code in 500..599
                     else -> false
-                } && runAttemptCount < 4
-                val text = when (error) {
-                    is SessionExpiredException -> "登录已过期，请重新登录后继续"
-                    is ApiException -> error.message ?: "接口请求失败"
-                    else -> error.message?.take(160) ?: "传输失败"
-                }
+                } && runAttemptCount < TransferMessages.MAX_AUTO_RETRIES
+                val text = TransferMessages.errorText(error)
                 dao.workerStatus(taskId, id.toString(), if (retry) TransferStatus.QUEUED else TransferStatus.FAILED,
-                    if (retry) "$text；将自动重试" else text)
+                    if (retry) TransferMessages.retryMessage(text, runAttemptCount) else text)
                 if (retry) Result.retry() else Result.failure()
             }
         }

@@ -14,8 +14,6 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 
 class DownloadEngine(private val api: PanApi, private val transfer: TransferHttp) {
-    private val resolver = DownloadUrlResolver(transfer)
-
     suspend fun run(
         cloudFile: CloudFile,
         destination: File,
@@ -35,7 +33,7 @@ class DownloadEngine(private val api: PanApi, private val transfer: TransferHttp
         if (expectedSize >= 0 && staging.length() > expectedSize) RandomAccessFile(staging, "rw").use { it.setLength(0) }
         if (expectedSize < 0 || staging.length() != expectedSize) {
             onProgress(TransferProgress("获取下载链接", staging.length(), expectedSize))
-            downloadTo(resolver.resolve(api.downloadLink(cloudFile)), staging, expectedSize, onProgress)
+            downloadTo(api.downloadLink(cloudFile), staging, expectedSize, onProgress)
         }
         if (expectedSize >= 0 && staging.length() != expectedSize) throw IOException("下载长度不完整，可继续重试")
         if (!cloudFile.isDirectory && validMd5(cloudFile.etag)) {
@@ -61,7 +59,7 @@ class DownloadEngine(private val api: PanApi, private val transfer: TransferHttp
             while (!complete) {
                 currentCoroutineContext().ensureActive()
                 val offset = staging.length()
-                transfer.download(url, offset) { response ->
+                transfer.download(url, offset, expectedSize) { response ->
                     if (response.code == 416) {
                         val remoteSize = response.header("Content-Range")?.substringAfter("*/")?.toLongOrNull()
                         if (remoteSize == offset && (expectedSize < 0 || expectedSize == offset)) {

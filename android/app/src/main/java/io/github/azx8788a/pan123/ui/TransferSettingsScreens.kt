@@ -91,6 +91,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.azx8788a.pan123.BuildConfig
 import io.github.azx8788a.pan123.data.TransferEntity
 import io.github.azx8788a.pan123.data.TransferStatus
+import io.github.azx8788a.pan123.tasks.TransferMessages
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -136,7 +137,7 @@ fun TransfersScreen(model: MainViewModel, openFile: (String) -> Unit) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     MetricTile("传输中", running.toString(), MaterialTheme.colorScheme.primary, Modifier.weight(1f))
-                    MetricTile("排队中", queued.toString(), WarningAmber, Modifier.weight(1f))
+                    MetricTile("等待中", queued.toString(), WarningAmber, Modifier.weight(1f))
                     MetricTile("已完成", complete.toString(), SuccessGreen, Modifier.weight(1f))
                 }
             }
@@ -205,13 +206,14 @@ private fun TransferCard(task: TransferEntity, model: MainViewModel, openFile: (
     }
     val statusText = when (task.status) {
         TransferStatus.RUNNING -> "传输中"
-        TransferStatus.QUEUED -> "排队中"
+        TransferStatus.QUEUED -> TransferMessages.queuedStatus(task.message)
         TransferStatus.PAUSED -> "已暂停"
         TransferStatus.FAILED -> "传输失败"
         TransferStatus.CANCELLED -> "已取消"
         TransferStatus.COMPLETE -> "已完成"
         else -> task.status
     }
+    val message = TransferMessages.displayMessage(task.message)
     val kindColor = if (task.kind == "upload") MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
     val progress = if (task.total > 0) (task.done.toDouble() / task.total).toFloat().coerceIn(0f, 1f) else 0f
 
@@ -279,9 +281,9 @@ private fun TransferCard(task: TransferEntity, model: MainViewModel, openFile: (
                     StatusPill("${formatBytes(speed)}/s", kindColor)
                 }
             }
-            if (task.message.isNotBlank() && task.status != TransferStatus.COMPLETE) {
+            if (message.isNotBlank() && task.status != TransferStatus.COMPLETE) {
                 Text(
-                    task.message,
+                    message,
                     modifier = Modifier.padding(top = 5.dp),
                     style = MaterialTheme.typography.bodySmall,
                     color = if (task.status == TransferStatus.FAILED) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -341,7 +343,7 @@ private fun TransferCard(task: TransferEntity, model: MainViewModel, openFile: (
                     DetailLine("状态", statusText)
                     DetailLine("进度", "${formatBytes(task.done)} / ${formatBytes(task.total)} · ${formatPercent(task.done, task.total)}")
                     DetailLine("本地路径", task.localPath)
-                    DetailLine("状态信息", task.message)
+                    DetailLine("状态信息", message)
                 }
             },
             confirmButton = { TextButton(onClick = { details = false }) { Text("关闭") } },

@@ -162,7 +162,7 @@ class PanApi(
             put("resource_list", buildJsonArray { resources.forEach { add(it) } })
         }, targetBase = fallbackUrl).array("task_list").mapNotNull { it as? JsonObject }
 
-    suspend fun downloadLink(file: CloudFile): DownloadLink {
+    suspend fun downloadLink(file: CloudFile): String {
         val body = if (file.isDirectory) buildJsonObject {
             put("fileIdList", buildJsonArray { add(buildJsonObject { put("fileId", file.id) }) })
         } else buildJsonObject {
@@ -171,12 +171,10 @@ class PanApi(
             put("fileName", file.name); put("size", file.size)
         }
         val data = request("POST", if (file.isDirectory) "/a/api/file/batch_download_info" else "/a/api/file/download_info",
-            body, successCodes = setOf(0, 5113, 5114))
-        val direct = data.text("RedirectUrl", "redirect_url", "redirectUrl")
-        if (direct.isNotBlank()) return DownloadLink(direct, true)
-        val url = data.text("DownloadUrl", "downloadUrl")
+            body)
+        val url = data.text("RedirectUrl", "redirect_url", "redirectUrl").ifBlank { data.text("DownloadUrl", "downloadUrl") }
         if (url.isBlank()) throw ApiException(-1, "服务端没有返回下载链接")
-        return DownloadLink(url, false)
+        return url
     }
 
     /** duplicate=1 preserves both files; never silently overwrites an existing cloud file. */

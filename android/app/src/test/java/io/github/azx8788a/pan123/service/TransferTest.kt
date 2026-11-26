@@ -91,12 +91,4 @@ class TransferTest {
         assertEquals("报告 (1).pdf", reserveOutput(dir, "报告.pdf").name)
         assertEquals("_.._foo", safeFileName("/../foo"))
     }
-
-    @Test fun rewritesUrlsAndPreservesEncodedSignature() {
-        val original = "https://download.example/file?name=a%2Fb&signature=ab%2Bcd"
-        val proxy = DownloadUrls.rewrite(original)
-        assertTrue(proxy.startsWith("https://web-pro2.123952.com/download-v2/"))
-        assertEquals("$original&auto_redirect=0", DownloadUrls.decodeParams(proxy))
-        assertEquals(DownloadUrls.decodeParams(proxy), DownloadUrls.decodeParams(DownloadUrls.rewrite(proxy)))
-    }
 }
